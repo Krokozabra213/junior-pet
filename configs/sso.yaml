@@ -1,0 +1,33 @@
+grpc:
+  readTimeout: 10s
+  writeTimeout: 10s
+  maxHeaderBytes: 1
+  host: 0.0.0.0
+  port: 44050
+
+http:
+  maxHeaderBytes: 1
+  readTimeout: 10s
+  writeTimeout: 10s
+  host: 0.0.0.0
+  port: 8080
+
+auth:
+  accessTokenTTL: 15m
+  refreshTokenTTL: 43200m
+  privateKeyPath: private.pem
+
+postgres:
+  connectTimeout: 5s
+  maxConns: 10
+  minConns: 2
+  maxConnLifeTime: 2h
+  maxConnIdleTime: 15m
+  sslMode: "disable"
+
+redis:
+  poolSize: 100
+  minIdleConns: 30
+  dialTimeout: 5m
+  readTimeout:
+  writeTimeout:

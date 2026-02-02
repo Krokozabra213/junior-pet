@@ -1,0 +1,35 @@
+version: "3"
+
+services:
+
+  postgres:
+    container_name: sso_postgres
+    image: postgres:16.4
+    environment:
+      POSTGRES_USER: ${SSO_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SSO_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SSO_POSTGRES_DB}
+    env_file:
+      - .env
+    volumes:
+      - postgres-data-sso:/var/lib/postgresql/data
+    ports:
+      - "0.0.0.0:5555:5432"
+    restart: unless-stopped
+    shm_size: 128mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+
+
+volumes:
+  postgres-data-sso:
+
+networks:
+  app-network:
+    driver: bridge
