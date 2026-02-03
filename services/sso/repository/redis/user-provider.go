@@ -11,6 +11,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const userProfilePrefix = "user:profile:"
+
 func (r *RedisRepository) CacheUserProfile(ctx context.Context, profile *domain.UserCacheProfile, ttl time.Duration) error {
 	const op = "repository.CacheUserProfile"
 	log := slog.With(
@@ -98,5 +100,5 @@ func (r *RedisRepository) DeleteUserProfile(ctx context.Context, userID int64) e
 }
 
 func (r *RedisRepository) userProfileKey(userID int64) string {
-	return fmt.Sprintf("user:profile:%d", userID)
+	return fmt.Sprintf("%s:%d", userProfilePrefix, userID)
 }
