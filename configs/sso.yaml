@@ -26,8 +26,10 @@ postgres:
   sslMode: "disable"
 
 redis:
-  poolSize: 100
-  minIdleConns: 30
-  dialTimeout: 5m
-  readTimeout:
-  writeTimeout:
+  poolSize: 10
+  minIdleConns: 2
+  dialTimeout: 5s
+  readTimeout: 3s
+  writeTimeout: 3s
+  connMaxLifetime: 2h
+  connMaxIdletime: 15m

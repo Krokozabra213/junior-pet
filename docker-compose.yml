@@ -2,7 +2,7 @@ version: "3"
 
 services:
 
-  postgres:
+  sso_postgres:
     container_name: sso_postgres
     image: postgres:16.4
     environment:
@@ -26,9 +26,32 @@ services:
     networks:
       - app-network
 
+  sso_redis:
+    container_name: redis_cache
+    image: redis:7.4
+    environment:
+      REDIS_ADDR: ${SSO_REDIS_ADDR}
+      REDIS_PASS: ${SSO_REDIS_PASSWORD}
+      REDIS_CACHE: ${SSO_REDIS_DATABASE}
+    env_file:
+      - .env
+    volumes:
+      - redis-data-sso:/data
+    ports:
+      - '0.0.0.0:6379:6379'
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli', '-a', '$${REDIS_PASS}', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - app-network
+
 
 volumes:
   postgres-data-sso:
+  redis-data-sso:
 
 networks:
   app-network:

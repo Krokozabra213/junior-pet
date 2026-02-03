@@ -14,12 +14,15 @@ import (
 
 // Default values
 const (
+
 	// Redis values
-	defaultRedisPoolSize     = 20
-	defaultRedisMinIdleConns = 5
-	defaultRedisDialTimeout  = 3 * time.Second
-	defaultRedisReadTimeout  = 2 * time.Second
-	defaultRedisWriteTimeout = 2 * time.Second
+	defaultRedisPoolSize        = 10
+	defaultRedisMinIdleConns    = 2
+	defaultRedisDialTimeout     = 3 * time.Second
+	defaultRedisReadTimeout     = 2 * time.Second
+	defaultRedisWriteTimeout    = 2 * time.Second
+	defaultRedisConnMaxLifetime = 2 * time.Hour
+	defaultRedisConnMaxIdletime = 15 * time.Minute
 
 	// Postgres values
 	defaultPGSSLMode         = "disable"
@@ -97,11 +100,13 @@ type (
 		Password string
 		Database int
 
-		PoolSize     int           `mapstructure:"poolSize"`
-		MinIdleConns int           `mapstructure:"minIdleConns"`
-		DialTimeout  time.Duration `mapstructure:"dialTimeout"`
-		ReadTimeout  time.Duration `mapstructure:"readTimeout"`
-		WriteTimeout time.Duration `mapstructure:"writeTimeout"`
+		PoolSize        int           `mapstructure:"poolSize"`
+		MinIdleConns    int           `mapstructure:"minIdleConns"`
+		DialTimeout     time.Duration `mapstructure:"dialTimeout"`
+		ReadTimeout     time.Duration `mapstructure:"readTimeout"`
+		WriteTimeout    time.Duration `mapstructure:"writeTimeout"`
+		ConnMaxLifetime time.Duration `mapstructure:"connMaxLifetime"`
+		ConnMaxIdletime time.Duration `mapstructure:"connMaxIdletime"`
 	}
 )
 
@@ -152,6 +157,8 @@ func populateDefault() {
 	viper.SetDefault("redis.dialTimeout", defaultRedisDialTimeout)
 	viper.SetDefault("redis.readTimeout", defaultRedisReadTimeout)
 	viper.SetDefault("redis.writeTimeout", defaultRedisWriteTimeout)
+	viper.SetDefault("redis.connMaxLifetime", defaultRedisConnMaxLifetime)
+	viper.SetDefault("redis.connMaxIdletime", defaultRedisConnMaxIdletime)
 
 	// Postgres defaults
 	viper.SetDefault("postgres.sslMode", defaultPGSSLMode)
@@ -288,9 +295,9 @@ func (c *Config) LogValue() slog.Value {
 			slog.String("ssl_mode", c.PG.SSLMode),
 			slog.Duration("connect_timeout", c.PG.ConnectTimeout),
 			slog.Int("max_conns", c.PG.MaxConns),
-            slog.Int("min_conns", c.PG.MinConns),
-            slog.Duration("max_conn_lifetime", c.PG.MaxConnLifeTime),
-            slog.Duration("max_conn_idletime", c.PG.MaxConnIdleTime),
+			slog.Int("min_conns", c.PG.MinConns),
+			slog.Duration("max_conn_lifetime", c.PG.MaxConnLifeTime),
+			slog.Duration("max_conn_idletime", c.PG.MaxConnIdleTime),
 		),
 
 		slog.Group("redis",
@@ -300,6 +307,8 @@ func (c *Config) LogValue() slog.Value {
 			slog.Duration("dial_timeout", c.Redis.DialTimeout),
 			slog.Duration("read_timeout", c.Redis.ReadTimeout),
 			slog.Duration("write_timeout", c.Redis.WriteTimeout),
+			slog.Duration("conn_max_lifetime", c.Redis.ConnMaxLifetime),
+			slog.Duration("conn_max_idletime", c.Redis.ConnMaxIdletime),
 		),
 	)
 }
