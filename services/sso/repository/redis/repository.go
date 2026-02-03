@@ -13,8 +13,7 @@ type RedisClient interface {
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
 	Exists(ctx context.Context, keys ...string) *redis.IntCmd
 	Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd
-	Ping(ctx context.Context) *redis.StatusCmd
-    SetEx(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	SetEx(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
 }
 
 type RedisRepository struct {

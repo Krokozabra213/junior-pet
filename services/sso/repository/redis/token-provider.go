@@ -2,28 +2,29 @@ package redis
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 )
 
-const tokenPrefix = "token:refresh:"
+const tokenPrefix = "token:revoked:"
 
-func (r *RedisRepository) SaveToken(ctx context.Context, userID int64, token string, expiresAt time.Time) error {
-	const op = "repository.SaveToken"
+// RevokeRefreshToken сохраняет refresh токен по JTI
+func (r *RedisRepository) RevokeRefreshToken(ctx context.Context, jti string, expiresAt time.Time) error {
+	const op = "repository.RevokeRefreshToken"
 	log := slog.With(
 		slog.String("op", op),
-		slog.Int64("user_id", userID),
+		slog.String("jti", jti),
 	)
 
-	expiration := time.Until(expiresAt)
-	if expiration <= 0 {
-		log.Warn("token already expired")
+	ttl := time.Until(expiresAt)
+	if ttl <= 0 {
 		return ErrTokenExpired
 	}
 
-	key := r.tokenKey(token)
+	key := r.refreshTokenKey(jti)
 
-	if err := r.client.SetEx(ctx, key, userID, expiration).Err(); err != nil {
+	if err := r.client.SetEx(ctx, key, "", ttl).Err(); err != nil {
 		log.Error("failed save token", "error", err)
 		return ErrInternal
 	}
@@ -31,13 +32,17 @@ func (r *RedisRepository) SaveToken(ctx context.Context, userID int64, token str
 	return nil
 }
 
-func (r *RedisRepository) CheckToken(ctx context.Context, token string) (bool, error) {
-	const op = "repository.CheckToken"
+// IsTokenRevoked проверяет существование токена
+func (r *RedisRepository) IsTokenRevoked(ctx context.Context, jti string) (bool, error) {
+	const op = "repository.IsTokenRevoked"
 	log := slog.With(
 		slog.String("op", op),
+		slog.String("jti", jti),
 	)
 
-	exists, err := r.client.Exists(ctx, token).Result()
+	key := r.refreshTokenKey(jti)
+
+	exists, err := r.client.Exists(ctx, key).Result()
 	if err != nil {
 		log.Error("failed check token", "error", err)
 		return false, ErrInternal
@@ -46,7 +51,7 @@ func (r *RedisRepository) CheckToken(ctx context.Context, token string) (bool, e
 	return exists == 1, nil
 }
 
-// tokenKey генерирует ключ для токена
-func (r *RedisRepository) tokenKey(token string) string {
-	return tokenPrefix + token
+// refreshTokenKey генерирует ключ для refresh токена
+func (r *RedisRepository) refreshTokenKey(jti string) string {
+	return fmt.Sprintf("%s:%s", tokenPrefix, jti)
 }
