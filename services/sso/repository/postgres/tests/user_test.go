@@ -51,7 +51,7 @@ func TestCreateUser(t *testing.T) {
 		user.Email = "second@test.com"
 		_, err = testRepo.CreateUser(ctx, user)
 
-		assert.ErrorIs(t, err, repository.ErrUserAlreadyExists)
+		assert.ErrorIs(t, err, repository.ErrAlreadyExists)
 	})
 
 	t.Run("duplicate email", func(t *testing.T) {
@@ -72,7 +72,7 @@ func TestCreateUser(t *testing.T) {
 		user.Username = "user2"
 		_, err = testRepo.CreateUser(ctx, user)
 
-		assert.ErrorIs(t, err, repository.ErrUserAlreadyExists)
+		assert.ErrorIs(t, err, repository.ErrAlreadyExists)
 	})
 }
 

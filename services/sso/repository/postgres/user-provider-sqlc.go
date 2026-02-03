@@ -21,7 +21,7 @@ func (r *PostgresRepository) CreateUser(ctx context.Context, user *domain.Create
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, ErrUserAlreadyExists
+			return nil, ErrAlreadyExists
 		}
 		return nil, r.handleError(err)
 	}
