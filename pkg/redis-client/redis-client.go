@@ -44,11 +44,11 @@ func NewConfig(addr, password string, db int, dialTimeout, readTimeout, writeTim
 	}
 }
 
-type Client struct {
-	client *redis.Client
+type RedisClient struct {
+	*redis.Client
 }
 
-func New(ctx context.Context, cfg Config) (*Client, error) {
+func New(ctx context.Context, cfg Config) (*RedisClient, error) {
 	options := &redis.Options{
 		Addr:     cfg.Addr,
 		Password: cfg.Password,
@@ -80,20 +80,12 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
-	return &Client{
-		client: client,
+	return &RedisClient{
+		Client: client,
 	}, nil
 }
 
 // Close — немедленное закрытие (для defer)
-func (c *Client) Close() {
-	c.client.Close()
-}
-
-func (c *Client) Ping(ctx context.Context) error {
-	return c.client.Ping(ctx).Err()
-}
-
-func (c *Client) Client() *redis.Client {
-	return c.client
+func (c *RedisClient) Close() {
+	c.Close()
 }
