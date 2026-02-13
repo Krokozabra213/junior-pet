@@ -19,7 +19,6 @@ func (b *Business) CreateUser(ctx context.Context, user *domain.CreateUser) (*do
 	)
 	log.Info("starting user registration process...")
 
-	// 3. Проверка существования email
 	exists, err := b.user.ExistsUserByEmail(ctx, user.Email)
 	if err != nil {
 		log.Error("failed to check email existence", slog.String("error", err.Error()))

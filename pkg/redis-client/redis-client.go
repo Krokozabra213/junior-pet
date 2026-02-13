@@ -86,6 +86,6 @@ func New(ctx context.Context, cfg Config) (*RedisClient, error) {
 }
 
 // Close — немедленное закрытие (для defer)
-func (c *RedisClient) Close() {
+func (c *RedisClient) CloseConn() {
 	c.Close()
 }

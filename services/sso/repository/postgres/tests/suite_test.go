@@ -51,6 +51,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to get connection string: %v\n", err)
 		os.Exit(1)
 	}
+    
 
 	testPool, err = pgxpool.New(ctx, connStr)
 	if err != nil {

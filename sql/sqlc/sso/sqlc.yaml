@@ -16,26 +16,23 @@ sql:
         emit_empty_slices: true
         emit_pointers_for_null_types: true
         overrides:
-          - db_type: "timestamptz"
-            go_type: "time.Time"
-          - db_type: "bigint"
-            go_type: "int64"
-        # overrides:
-        #   # NOT NULL поля
-        #   - db_type: "pg_catalog.timestamptz"
-        #     go_type: "time.Time"
-        #   - db_type: "pg_catalog.timestamp"
-        #     go_type: "time.Time"
-        #   # NULLABLE поля
-        #   - db_type: "pg_catalog.timestamptz"
-        #     nullable: true
-        #     go_type:
-        #       import: "time"
-        #       type: "Time"
-        #       pointer: true
-        #   - db_type: "pg_catalog.timestamp"
-        #     nullable: true
-        #     go_type:
-        #       import: "time"
-        #       type: "Time"
-        #       pointer: true
+          - column: "subscriptions.user_id"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+
+          - column: "subscriptions.start_date"
+            go_type:
+              import: "time"
+              type: "Time"
+
+          - column: "subscriptions.end_date"
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+
+          - column: "subscriptions.created_at"
+            go_type:
+              import: "time"
+              type: "Time"

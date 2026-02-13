@@ -37,20 +37,20 @@ func run() error {
 	log.Info("starting application")
 
 	// Database
-	// pgxConf := pgxclient.NewPGXConfig(cfg.PG.Host, cfg.PG.Port, cfg.PG.User, cfg.PG.Password,
-	// 	cfg.PG.DBName, cfg.PG.SSLMode, cfg.PG.ConnectTimeout, cfg.PG.MaxConnLifeTime,
-	// 	cfg.PG.MaxConnIdleTime, cfg.PG.MaxConns, cfg.PG.MinConns,
-	// )
-	// pgxClient, err := pgxclient.New(context.Background(), pgxConf)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer func() {
-	// 	if err := pgxClient.Shutdown(shutdownTimeout); err != nil {
-	// 		log.Error("database shutdown error", "error", err)
-	// 	}
-	// }()
-	// log.Info("connected to postgres")
+	pgxConf := pgxclient.NewPGXConfig(cfg.PG.Host, cfg.PG.Port, cfg.PG.User, cfg.PG.Password,
+		cfg.PG.DBName, cfg.PG.SSLMode, cfg.PG.ConnectTimeout, cfg.PG.MaxConnLifeTime,
+		cfg.PG.MaxConnIdleTime, cfg.PG.MaxConns, cfg.PG.MinConns,
+	)
+	pgxClient, err := pgxclient.New(context.Background(), pgxConf)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := pgxClient.Shutdown(shutdownTimeout); err != nil {
+			log.Error("database shutdown error", "error", err)
+		}
+	}()
+	log.Info("connected to postgres")
 
 	// Redis
 	redisCfg := redisclient.NewConfig(
@@ -64,7 +64,7 @@ func run() error {
 	if err != nil {
 		log.Error("redis connect error: %v", "error", err)
 	}
-	defer redisClient.Close()
+	defer redisClient.CloseConn()
 	log.Info("connected to redis")
 
 	return nil
