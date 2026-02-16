@@ -1,314 +1,138 @@
 package ssoconfig
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
-	"strconv"
 	"time"
 
+	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
-	"github.com/spf13/viper"
-)
-
-// Default values
-const (
-
-	// Redis values
-	defaultRedisPoolSize        = 10
-	defaultRedisMinIdleConns    = 2
-	defaultRedisDialTimeout     = 3 * time.Second
-	defaultRedisReadTimeout     = 2 * time.Second
-	defaultRedisWriteTimeout    = 2 * time.Second
-	defaultRedisConnMaxLifetime = 2 * time.Hour
-	defaultRedisConnMaxIdletime = 15 * time.Minute
-
-	// Postgres values
-	defaultPGSSLMode         = "disable"
-	defaultPGConnectTimeout  = 5 * time.Second
-	defaultPGMaxConns        = 10
-	defaultPGMinConns        = 2
-	defaultPGMaxConnLifeTime = 1 * time.Hour
-	defaultPGMaxConnIdleTime = 15 * time.Minute
-
-	// HTTP values
-	defaultHTTPHost               = "localhost"
-	defaultHTTPPort               = "8080"
-	defaultHTTPWriteTimeout       = 10 * time.Second
-	defaultHTTPReadTimeout        = 10 * time.Second
-	defaultHTTPMaxHeaderMegabytes = 1
-
-	// GRPC values
-	defaultGRPCHost               = "localhost"
-	defaultGRPCPort               = "44050"
-	defaultGRPCReadTimeout        = 10 * time.Second
-	defaultGRPCWriteTimeout       = 10 * time.Second
-	defaultGRPCMaxHeaderMegabytes = 1
-
-	// JWT values
-	defaultAccessTokenTTL  = 15 * time.Minute
-	defaultRefreshTokenTTL = 24 * time.Hour * 30
-	defaultPrivateKeyPath  = "private.pem"
-)
-
-type (
-	PostgresConfig struct {
-		Host     string
-		Port     string
-		User     string
-		Password string
-		DBName   string
-
-		SSLMode         string        `mapstructure:"sslMode"`
-		ConnectTimeout  time.Duration `mapstructure:"connectTimeout"`
-		MaxConns        int           `mapstructure:"maxConns"`
-		MinConns        int           `mapstructure:"minConns"`
-		MaxConnLifeTime time.Duration `mapstructure:"maxConnLifeTime"`
-		MaxConnIdleTime time.Duration `mapstructure:"maxConnIdleTime"`
-	}
-
-	GRPCConfig struct {
-		Host               string        `mapstructure:"host"`
-		Port               string        `mapstructure:"port"`
-		ReadTimeout        time.Duration `mapstructure:"readTimeout"`
-		WriteTimeout       time.Duration `mapstructure:"writeTimeout"`
-		MaxHeaderMegabytes int           `mapstructure:"maxHeaderBytes"`
-	}
-
-	HTTPConfig struct {
-		Host               string        `mapstructure:"host"`
-		Port               string        `mapstructure:"port"`
-		ReadTimeout        time.Duration `mapstructure:"readTimeout"`
-		WriteTimeout       time.Duration `mapstructure:"writeTimeout"`
-		MaxHeaderMegabytes int           `mapstructure:"maxHeaderBytes"`
-	}
-
-	AppConfig struct {
-		AppSecretKey string
-		Environment  string
-	}
-
-	JWTConfig struct {
-		AccessTokenTTL  time.Duration `mapstructure:"accessTokenTTL"`
-		RefreshTokenTTL time.Duration `mapstructure:"refreshTokenTTL"`
-		PrivateKey      []byte
-	}
-
-	RedisConfig struct {
-		Addr     string
-		Password string
-		Database int
-
-		PoolSize        int           `mapstructure:"poolSize"`
-		MinIdleConns    int           `mapstructure:"minIdleConns"`
-		DialTimeout     time.Duration `mapstructure:"dialTimeout"`
-		ReadTimeout     time.Duration `mapstructure:"readTimeout"`
-		WriteTimeout    time.Duration `mapstructure:"writeTimeout"`
-		ConnMaxLifetime time.Duration `mapstructure:"connMaxLifetime"`
-		ConnMaxIdletime time.Duration `mapstructure:"connMaxIdletime"`
-	}
 )
 
 type Config struct {
-	JWT   JWTConfig
-	App   AppConfig
-	PG    PostgresConfig
-	Redis RedisConfig
-	HTTP  HTTPConfig
-	GRPC  GRPCConfig
+	App   AppConfig      `yaml:"app"`
+	HTTP  HTTPConfig     `yaml:"http"`
+	GRPC  GRPCConfig     `yaml:"grpc"`
+	PG    PostgresConfig `yaml:"postgres"`
+	Redis RedisConfig    `yaml:"redis"`
+	JWT   JWTConfig      `yaml:"jwt"`
 }
 
-func newCfg() Config {
-	cfg := Config{
-		JWT:   JWTConfig{},
-		App:   AppConfig{},
-		PG:    PostgresConfig{},
-		Redis: RedisConfig{},
-		HTTP:  HTTPConfig{},
-		GRPC:  GRPCConfig{},
+type AppConfig struct {
+	Environment  string `env:"SSO_ENV" env-default:"development"`
+	AppSecretKey string `env:"SSO_APP_SECRET" env-required:"true"`
+}
+
+type PostgresConfig struct {
+	Host     string `env:"SSO_POSTGRES_HOST" env-required:"true"`
+	Port     string `env:"SSO_POSTGRES_PORT" env-default:"5432"`
+	User     string `env:"SSO_POSTGRES_USER" env-required:"true"`
+	Password string `env:"SSO_POSTGRES_PASSWORD" env-required:"true"`
+	DBName   string `env:"SSO_POSTGRES_DB" env-required:"true"`
+
+	MaxConns int `yaml:"maxConns" env:"SSO_PG_MAX_CONNS" env-default:"10"`
+	MinConns int `yaml:"minConns" env:"SSO_PG_MIN_CONNS" env-default:"2"`
+}
+
+type RedisConfig struct {
+	Addr     string `env:"SSO_REDIS_ADDR" env-required:"true"`
+	Password string `env:"SSO_REDIS_PASSWORD" env-required:"true"`
+	Database int    `env:"SSO_REDIS_DATABASE" env-default:"0"`
+
+	PoolSize     int `yaml:"poolSize" env:"SSO_REDIS_POOL_SIZE" env-default:"10"`
+	MinIdleConns int `yaml:"minIdleConns" env:"SSO_REDIS_MIN_IDLE_CONNS" env-default:"2"`
+}
+
+type HTTPConfig struct {
+	Host               string        `yaml:"host" env:"SSO_HTTP_HOST" env-default:"0.0.0.0"`
+	Port               string        `yaml:"port" env:"SSO_HTTP_PORT" env-default:"8080"`
+	ReadTimeout        time.Duration `yaml:"readTimeout" env:"SSO_HTTP_READ_TIMEOUT" env-default:"10s"`
+	WriteTimeout       time.Duration `yaml:"writeTimeout" env:"SSO_HTTP_WRITE_TIMEOUT" env-default:"10s"`
+	MaxHeaderMegabytes int           `yaml:"maxHeaderBytes" env:"SSO_HTTP_MAX_HEADER_BYTES" env-default:"1"`
+}
+
+type GRPCConfig struct {
+	Host               string        `yaml:"host" env:"SSO_GRPC_HOST" env-default:"0.0.0.0"`
+	Port               string        `yaml:"port" env:"SSO_GRPC_PORT" env-default:"44050"`
+	ReadTimeout        time.Duration `yaml:"readTimeout" env:"SSO_GRPC_READ_TIMEOUT" env-default:"10s"`
+	WriteTimeout       time.Duration `yaml:"writeTimeout" env:"SSO_GRPC_WRITE_TIMEOUT" env-default:"10s"`
+	MaxHeaderMegabytes int           `yaml:"maxHeaderBytes" env:"SSO_GRPC_MAX_HEADER_BYTES" env-default:"1"`
+}
+
+type JWTConfig struct {
+	AccessTokenTTL  time.Duration `yaml:"accessTokenTTL" env:"SSO_JWT_ACCESS_TTL" env-default:"15m"`
+	RefreshTokenTTL time.Duration `yaml:"refreshTokenTTL" env:"SSO_JWT_REFRESH_TTL" env-default:"720h"`
+	PrivateKeyPath  string        `yaml:"privateKeyPath" env:"SSO_JWT_PRIVATE_KEY_PATH" env-default:"private.pem"`
+	PrivateKey      []byte        `yaml:"-" env:"-"`
+}
+
+func MustInit(configFile string) *Config {
+	cfg, err := Init(configFile)
+	if err != nil {
+		panic("config: " + err.Error())
 	}
 	return cfg
 }
 
-func populateDefault() {
-	// HTTP defaults
-	viper.SetDefault("http.host", defaultHTTPHost)
-	viper.SetDefault("http.port", defaultHTTPPort)
-	viper.SetDefault("http.maxHeaderMegabytes", defaultHTTPMaxHeaderMegabytes)
-	viper.SetDefault("http.readTimeout", defaultHTTPReadTimeout)
-	viper.SetDefault("http.writeTimeout", defaultHTTPWriteTimeout)
+func Init(configFile string) (*Config, error) {
 
-	// GRPC defaults
-	viper.SetDefault("grpc.host", defaultGRPCHost)
-	viper.SetDefault("grpc.port", defaultGRPCPort)
-	viper.SetDefault("grpc.maxHeaderMegabytes", defaultGRPCMaxHeaderMegabytes)
-	viper.SetDefault("grpc.readTimeout", defaultGRPCReadTimeout)
-	viper.SetDefault("grpc.writeTimeout", defaultGRPCWriteTimeout)
-
-	// JWT default
-	viper.SetDefault("jwt.accessTokenTTL", defaultAccessTokenTTL)
-	viper.SetDefault("jwt.refreshTokenTTL", defaultRefreshTokenTTL)
-	viper.SetDefault("jwt.privateKeyPath", defaultPrivateKeyPath)
-
-	// Redis defaults
-	viper.SetDefault("redis.poolSize", defaultRedisPoolSize)
-	viper.SetDefault("redis.minIdleConns", defaultRedisMinIdleConns)
-	viper.SetDefault("redis.dialTimeout", defaultRedisDialTimeout)
-	viper.SetDefault("redis.readTimeout", defaultRedisReadTimeout)
-	viper.SetDefault("redis.writeTimeout", defaultRedisWriteTimeout)
-	viper.SetDefault("redis.connMaxLifetime", defaultRedisConnMaxLifetime)
-	viper.SetDefault("redis.connMaxIdletime", defaultRedisConnMaxIdletime)
-
-	// Postgres defaults
-	viper.SetDefault("postgres.sslMode", defaultPGSSLMode)
-	viper.SetDefault("postgres.connectTimeout", defaultPGConnectTimeout)
-	viper.SetDefault("postgres.maxConns", defaultPGMaxConns)
-	viper.SetDefault("postgres.minConns", defaultPGMinConns)
-	viper.SetDefault("postgres.maxConnLifeTime", defaultPGMaxConnLifeTime)
-	viper.SetDefault("postgres.maxConnIdleTime", defaultPGMaxConnIdleTime)
-}
-
-func Init(configFile, envFile string) (*Config, error) {
-	populateDefault()
-
-	if err := parseConfigFile(configFile); err != nil {
-		return nil, err
+	if err := godotenv.Load(); err != nil {
+		return nil, fmt.Errorf("load env file: %w", err)
 	}
 
-	cfg := newCfg()
+	var cfg Config
 
-	err := unmarshal(&cfg)
+	if err := cleanenv.ReadConfig(configFile, &cfg); err != nil {
+		return nil, fmt.Errorf("read config: %w", err)
+	}
+
+	keyData, err := os.ReadFile(cfg.JWT.PrivateKeyPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read private key %q: %w", cfg.JWT.PrivateKeyPath, err)
 	}
-
-	err = setFromEnv(envFile, &cfg)
-	if err != nil {
-		return nil, err
-	}
+	cfg.JWT.PrivateKey = keyData
 
 	return &cfg, nil
-}
-
-func parseConfigFile(configPath string) error {
-	viper.SetConfigFile(configPath)
-	if err := viper.ReadInConfig(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func unmarshal(cfg *Config) error {
-	if err := viper.UnmarshalKey("http", &cfg.HTTP); err != nil {
-		return err
-	}
-
-	if err := viper.UnmarshalKey("grpc", &cfg.GRPC); err != nil {
-		return err
-	}
-
-	if err := viper.UnmarshalKey("redis", &cfg.Redis); err != nil {
-		return err
-	}
-
-	if err := viper.UnmarshalKey("postgres", &cfg.PG); err != nil {
-		return err
-	}
-
-	if err := viper.UnmarshalKey("jwt", &cfg.JWT); err != nil {
-		return err
-	}
-
-	keyPath := viper.GetString("jwt.privateKeyPath")
-	data, err := PrivateKeyData(keyPath)
-	if err != nil {
-		return err
-	}
-	cfg.JWT.PrivateKey = data
-
-	return nil
-}
-
-func PrivateKeyData(keyPath string) ([]byte, error) {
-	if keyPath == "" {
-		return []byte(nil), errors.New("absent private key path on env file")
-	}
-	keyData, err := os.ReadFile(keyPath)
-	if err != nil {
-		return []byte(nil), fmt.Errorf("failed to read private key file: %v", err)
-	}
-
-	return keyData, nil
-}
-
-func setFromEnv(envpath string, cfg *Config) error {
-	err := godotenv.Load(envpath)
-	if err != nil {
-		return err
-	}
-
-	// APP
-	cfg.App.AppSecretKey = os.Getenv("SSO_APP_SECRET")
-	cfg.App.Environment = os.Getenv("SSO_ENV")
-
-	// POSTGRES
-	cfg.PG.User = os.Getenv("SSO_POSTGRES_USER")
-	cfg.PG.Host = os.Getenv("SSO_POSTGRES_HOST")
-	cfg.PG.Port = os.Getenv("SSO_POSTGRES_PORT")
-	cfg.PG.DBName = os.Getenv("SSO_POSTGRES_DB")
-	cfg.PG.Password = os.Getenv("SSO_POSTGRES_PASSWORD")
-
-	// REDIS
-	cfg.Redis.Addr = os.Getenv("SSO_REDIS_ADDR")
-	cfg.Redis.Password = os.Getenv("SSO_REDIS_PASSWORD")
-	cfg.Redis.Database, err = strconv.Atoi(os.Getenv("SSO_REDIS_DATABASE"))
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (c *Config) LogValue() slog.Value {
 	return slog.GroupValue(
 		slog.String("env", c.App.Environment),
+
 		slog.Group("http",
 			slog.String("address", c.HTTP.Host+":"+c.HTTP.Port),
 			slog.Duration("read_timeout", c.HTTP.ReadTimeout),
 			slog.Duration("write_timeout", c.HTTP.WriteTimeout),
-			slog.Int("maxHeaderMegabytes", c.HTTP.MaxHeaderMegabytes),
+			slog.Int("max_header_megabytes", c.HTTP.MaxHeaderMegabytes),
 		),
+
 		slog.Group("grpc",
-			slog.String("address", c.GRPC.Host+":"+c.HTTP.Port),
+			slog.String("address", c.GRPC.Host+":"+c.GRPC.Port),
 			slog.Duration("read_timeout", c.GRPC.ReadTimeout),
 			slog.Duration("write_timeout", c.GRPC.WriteTimeout),
-			slog.Int("maxHeaderMegabytes", c.GRPC.MaxHeaderMegabytes),
+			slog.Int("max_header_megabytes", c.GRPC.MaxHeaderMegabytes),
 		),
+
 		slog.Group("jwt",
 			slog.Duration("access_token_ttl", c.JWT.AccessTokenTTL),
 			slog.Duration("refresh_token_ttl", c.JWT.RefreshTokenTTL),
+			slog.String("private_key_path", c.JWT.PrivateKeyPath),
 		),
 
 		slog.Group("postgres",
 			slog.String("address", c.PG.Host+":"+c.PG.Port),
-			slog.String("ssl_mode", c.PG.SSLMode),
-			slog.Duration("connect_timeout", c.PG.ConnectTimeout),
+			slog.String("database", c.PG.DBName),
+			slog.String("user", c.PG.User),
 			slog.Int("max_conns", c.PG.MaxConns),
 			slog.Int("min_conns", c.PG.MinConns),
-			slog.Duration("max_conn_lifetime", c.PG.MaxConnLifeTime),
-			slog.Duration("max_conn_idletime", c.PG.MaxConnIdleTime),
 		),
 
 		slog.Group("redis",
 			slog.String("address", c.Redis.Addr),
+			slog.Int("database", c.Redis.Database),
 			slog.Int("pool_size", c.Redis.PoolSize),
-			slog.Int("min_edle_conns", c.Redis.MinIdleConns),
-			slog.Duration("dial_timeout", c.Redis.DialTimeout),
-			slog.Duration("read_timeout", c.Redis.ReadTimeout),
-			slog.Duration("write_timeout", c.Redis.WriteTimeout),
-			slog.Duration("conn_max_lifetime", c.Redis.ConnMaxLifetime),
-			slog.Duration("conn_max_idletime", c.Redis.ConnMaxIdletime),
+			slog.Int("min_idle_conns", c.Redis.MinIdleConns),
 		),
 	)
 }

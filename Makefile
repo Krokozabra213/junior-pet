@@ -1,13 +1,28 @@
 SSO_PG_DSN=postgres://myuser:mypassword@localhost:5555/postgres?sslmode=disable
 SSO_MIGRATION=sql/goose/sso/migrations/
 
-.PHONY: generate-private test-integrate
+.PHONY: generate-private test-integrate sso-migrate-create sso-migrate-up sso-migrate-down sso-migrate-status sso-migrate-reset run
+
+# Default target
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  docker-up                            Start all containers"
+	@echo "  docker-down                          Stop all containers"
+	@echo "  migrate-create name=<table_name>     Create new migration file"
+	@echo "  migrate-up                           Apply all pending migrations"
+	@echo "  migrate-down                         Rollback last migration"
+	@echo "  migrate-status                       Show migrations status"
+	@echo "  migrate-reset                        Rollback all migrations"
+	@echo "  test                                 Start tests"
+	@echo "  test-integrate                       Start intergration tests"
 
 generate-private:
 	go run scripts/gen-private.go
 
-test-integrate:
-	go test -tags=integration -v ./...
+run:
+	go run cmd/sso/main.go -config configs/sso.yaml
 
 # Create new migration file: make sso-migrate-create name=name_table
 sso-migrate-create:
@@ -24,3 +39,10 @@ sso-migrate-status:
 
 sso-migrate-reset:
 	goose -dir $(SSO_MIGRATION) postgres "$(SSO_PG_DSN)" reset
+
+# Start tests
+test:
+	go test -v -count=1 ./...
+
+test-integrate:
+	go test -tags=integration -v ./...
